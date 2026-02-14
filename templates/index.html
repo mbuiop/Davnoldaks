@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Giant Brain AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: #000;
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        /* حالت چت */
+        .chat-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            color: #fff;
+        }
+        
+        /* حالت مدیریت */
+        .admin-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0a0a0a;
+            display: none;
+            overflow-y: auto;
+            color: #fff;
+        }
+        
+        /* هدر */
+        .header {
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            padding: env(safe-area-inset-top, 20px) 20px 16px 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .info {
+            flex: 1;
+        }
+        
+        .name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            background: linear-gradient(135deg, #fff, #a0a0a0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.8rem;
+            color: #9ca3af;
+        }
+        
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        
+        .switch-btn {
+            background: #333;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        /* منطقه پیام‌ها */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 16px;
+            background: #0f0f0f;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .message {
+            display: flex;
+            width: 100%;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+        }
+        
+        .message.bot {
+            justify-content: flex-start;
+        }
+        
+        .bubble {
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 22px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+        
+        .user .bubble {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+        
+        .bot .bubble {
+            background: #1a1a1a;
+            color: #fff;
+            border-bottom-left-radius: 6px;
+            border: 1px solid #333;
+        }
+        
+        .time {
+            font-size: 0.7rem;
+            color: #6b7280;
+            margin-top: 6px;
+            margin-right: 14px;
+        }
+        
+        /* تایپ ایندیکیتور */
+        .typing {
+            background: #1a1a1a;
+            padding: 14px 22px;
+            border-radius: 22px;
+            border-bottom-left-radius: 6px;
+            border: 1px solid #333;
+            display: inline-flex;
+            gap: 6px;
+        }
+        
+        .typing span {
+            width: 8px;
+            height: 8px;
+            background: #6b7280;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+            30% { transform: translateY(-8px); opacity: 1; }
+        }
+        
+        /* ورودی */
+        .input-area {
+            background: #0a0a0a;
+            border-top: 1px solid #333;
+            padding: 12px 16px env(safe-area-inset-bottom, 12px) 16px;
+        }
+        
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 30px;
+            padding: 4px 4px 4px 18px;
+        }
+        
+        .input-wrapper:focus-within {
+            border-color: #3b82f6;
+            background: #222;
+        }
+        
+        #userInput {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 12px 0;
+            font-size: 1rem;
+            outline: none;
+            color: #fff;
+        }
+        
+        #userInput::placeholder {
+            color: #6b7280;
+        }
+        
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            border: none;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        
+        /* پنل مدیریت */
+        .admin-container {
+            padding: 20px;
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .admin-title {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+        
+        .stat-card h3 {
+            color: #9ca3af;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #3b82f6;
+        }
+        
+        .learn-section {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px solid #333;
+        }
+        
+        .learn-section h2 {
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #9ca3af;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            outline: none;
+        }
+        
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #333;
+            color: white;
+        }
+        
+        .status-badge {
+            background: #333;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .status-badge.training {
+            background: #f59e0b;
+            color: black;
+        }
+        
+        .status-badge.idle {
+            background: #10b981;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- حالت چت -->
+    <div class="chat-mode" id="chatMode">
+        <div class="header">
+            <div class="avatar">🧠</div>
+            <div class="info">
+                <div class="name">Giant Brain AI</div>
+                <div class="status">
+                    <span class="dot"></span>
+                    <span>۴۸ لایه · ۲۵۳B پارامتر</span>
+                </div>
+            </div>
+            <button class="switch-btn" onclick="switchMode('admin')">⚙️</button>
+        </div>
+        
+        <div class="messages" id="messages"></div>
+        
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input type="text" id="userInput" placeholder="سوال خود را بپرس...">
+                <button class="send-btn" onclick="sendMessage()">📤</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- حالت مدیریت -->
+    <div class="admin-mode" id="adminMode">
+        <div class="header">
+            <div class="avatar">⚙️</div>
+            <div class="info">
+                <div class="name">پنل مدیریت</div>
+                <div class="status">
+                    <span class="dot" id="trainingDot"></span>
+                    <span id="trainingStatus">آماده</span>
+                </div>
+            </div>
+            <button class="switch-btn" onclick="switchMode('chat')">💬</button>
+        </div>
+        
+        <div class="admin-container">
+            <!-- آمار -->
+            <div class="stats-grid" id="stats">
+                <div class="stat-card">
+                    <h3>گام‌های آموزش</h3>
+                    <div class="stat-number" id="statSteps">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>میانگین Loss</h3>
+                    <div class="stat-number" id="statLoss">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>حافظه</h3>
+                    <div class="stat-number" id="statMemory">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>واژگان</h3>
+                    <div class="stat-number" id="statVocab">0</div>
+                </div>
+            </div>
+            
+            <!-- یادگیری از متن -->
+            <div class="learn-section">
+                <h2>📝 یادگیری از متن</h2>
+                <div class="form-group">
+                    <label>متن:</label>
+                    <textarea id="learnText" placeholder="متن مورد نظر برای یادگیری را وارد کنید..."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="learnFromText()">یاد بگیر</button>
+            </div>
+            
+            <!-- یادگیری از فایل -->
+            <div class="learn-section">
+                <h2>📁 یادگیری از فایل</h2>
+                <div class="form-group">
+                    <label>انتخاب فایل:</label>
+                    <input type="file" id="learnFile" accept=".txt,.md">
+                </div>
+                <button class="btn btn-primary" onclick="learnFromFile()">آپلود و یادگیری</button>
+            </div>
+            
+            <!-- وضعیت آموزش -->
+            <div class="learn-section">
+                <h2>⚡ وضعیت آموزش</h2>
+                <div style="margin-bottom: 15px;">
+                    <span class="status-badge" id="trainingStateBadge">آماده</span>
+                </div>
+                <div id="trainingProgress" style="margin-bottom: 15px; display: none;">
+                    <div style="background: #333; height: 20px; border-radius: 10px; overflow: hidden;">
+                        <div id="progressBar" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); width: 0%; height: 100%;"></div>
+                    </div>
+                    <div style="margin-top: 10px; color: #9ca3af;" id="progressText"></div>
+                </div>
+                <button class="btn btn-secondary" onclick="stopTraining()" id="stopBtn" style="display: none;">توقف آموزش</button>
+            </div>
+            
+            <!-- ذخیره و بارگذاری -->
+            <div class="learn-section">
+                <h2>💾 ذخیره و بارگذاری</h2>
+                <button class="btn btn-primary" onclick="saveBrain()">ذخیره مغز</button>
+                <button class="btn btn-secondary" onclick="loadBrain()">بارگذاری آخرین مدل</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentMode = 'chat';
+        let statsInterval;
+        
+        // ========== تغییر حالت ==========
+        function switchMode(mode) {
+            currentMode = mode;
+            if (mode === 'chat') {
+                document.getElementById('chatMode').style.display = 'flex';
+                document.getElementById('adminMode').style.display = 'none';
+            } else {
+                document.getElementById('chatMode').style.display = 'none';
+                document.getElementById('adminMode').style.display = 'block';
+                loadStats();
+                startStatsInterval();
+            }
+        }
+        
+        // ========== توابع چت ==========
+        function addMessage(text, sender) {
+            const messages = document.getElementById('messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.innerText = text;
+            
+            const time = document.createElement('div');
+            time.className = 'time';
+            const now = new Date();
+            time.innerText = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            msgDiv.appendChild(bubble);
+            msgDiv.appendChild(time);
+            messages.appendChild(msgDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        function showTyping() {
+            const messages = document.getElementById('messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot';
+            typingDiv.id = 'typing';
+            typingDiv.innerHTML = `
+                <div class="typing">
+                    <span></span><span></span><span></span>
+                </div>
+            `;
+            messages.appendChild(typingDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        function hideTyping() {
+            const typing = document.getElementById('typing');
+            if (typing) typing.remove();
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+            
+            addMessage(msg, 'user');
+            input.value = '';
+            showTyping();
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: msg})
+                });
+                
+                const data = await response.json();
+                hideTyping();
+                addMessage(data.response, 'bot');
+            } catch (error) {
+                hideTyping();
+                addMessage('خطا: ' + error.message, 'bot');
+            }
+        }
+        
+        // ========== توابع مدیریت ==========
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/brain/stats');
+                const data = await response.json();
+                
+                document.getElementById('statSteps').innerText = data.step || 0;
+                document.getElementById('statLoss').innerText = (data.avg_loss || 0).toFixed(4);
+                document.getElementById('statMemory').innerText = data.memory_size || 0;
+                document.getElementById('statVocab').innerText = data.vocab_size || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        async function checkTrainingStatus() {
+            try {
+                const response = await fetch('/api/learn/status');
+                const data = await response.json();
+                
+                const statusEl = document.getElementById('trainingStatus');
+                const dotEl = document.getElementById('trainingDot');
+                const badgeEl = document.getElementById('trainingStateBadge');
+                const progressDiv = document.getElementById('trainingProgress');
+                const stopBtn = document.getElementById('stopBtn');
+                
+                if (data.is_training) {
+                    statusEl.innerText = 'در حال آموزش';
+                    dotEl.style.background = '#f59e0b';
+                    badgeEl.innerText = 'در حال آموزش';
+                    badgeEl.className = 'status-badge training';
+                    progressDiv.style.display = 'block';
+                    stopBtn.style.display = 'inline-block';
+                    
+                    if (data.total_files > 0) {
+                        const progress = (data.progress / data.total_files) * 100;
+                        document.getElementById('progressBar').style.width = progress + '%';
+                        document.getElementById('progressText').innerText = 
+                            `پردازش ${data.current_file} (${data.progress}/${data.total_files})`;
+                    }
+                } else {
+                    statusEl.innerText = 'آماده';
+                    dotEl.style.background = '#10b981';
+                    badgeEl.innerText = 'آماده';
+                    badgeEl.className = 'status-badge idle';
+                    progressDiv.style.display = 'none';
+                    stopBtn.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error checking training status:', error);
+            }
+        }
+        
+        function startStatsInterval() {
+            if (statsInterval) clearInterval(statsInterval);
+            statsInterval = setInterval(() => {
+                loadStats();
+                checkTrainingStatus();
+            }, 2000);
+        }
+        
+        async function learnFromText() {
+            const text = document.getElementById('learnText').value.trim();
+            if (!text) {
+                alert('متن را وارد کنید');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/learn/text', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text: text})
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert(`✅ یادگیری انجام شد! Loss: ${data.loss.toFixed(4)}`);
+                    document.getElementById('learnText').value = '';
+                    loadStats();
+                }
+            } catch (error) {
+                alert('خطا: ' + error.message);
+            }
+        }
+        
+        async function learnFromFile() {
+            const fileInput = document.getElementById('learnFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('فایل را انتخاب کنید');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/learn/file', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert(`✅ یادگیری از فایل انجام شد! Loss: ${data.loss.toFixed(4)}`);
+                    fileInput.value = '';
+                    loadStats();
+                }
+            } catch (error) {
+                alert('خطا: ' + error.message);
+            }
+        }
+        
+        async function stopTraining() {
+            try {
+                await fetch('/api/learn/stop', {method: 'POST'});
+            } catch (error) {
+                console.error('Error stopping training:', error);
+            }
+        }
+        
+        async function saveBrain() {
+            try {
+                const response = await fetch('/api/brain/save', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({filename: 'manual_save.pt'})
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('✅ مغز با موفقیت ذخیره شد');
+                }
+            } catch (error) {
+                alert('خطا: ' + error.message);
+            }
+        }
+        
+        async function loadBrain() {
+            try {
+                const response = await fetch('/api/brain/load', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({filename: 'best_model.pt'})
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('✅ مغز با موفقیت بارگذاری شد');
+                    loadStats();
+                } else {
+                    alert('❌ خطا در بارگذاری');
+                }
+            } catch (error) {
+                alert('خطا: ' + error.message);
+            }
+        }
+        
+        // ========== رویدادها ==========
+        document.getElementById('userInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+        
+        // Load initial stats
+        loadStats();
+    </script>
+</body>
+          </html>
