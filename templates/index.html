@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تاریخ‌دان هوشمند</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        /* حالت چت */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+        }
+        .chat-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .gemini-badge {
+            background: #4285f4;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 0.9em;
+        }
+        .admin-link {
+            color: white;
+            text-decoration: none;
+            padding: 8px 20px;
+            border-radius: 50px;
+            background: rgba(255,255,255,0.2);
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        .message {
+            display: flex;
+            margin-bottom: 25px;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message.user { justify-content: flex-end; }
+        .message.bot { justify-content: flex-start; }
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .user .message-content {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        .bot .message-content {
+            background: white;
+            border-bottom-left-radius: 5px;
+        }
+        .source-badge {
+            display: inline-block;
+            background: #4285f4;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            margin-left: 8px;
+        }
+        .message-time {
+            font-size: 0.7em;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        .chat-input-container {
+            padding: 20px 30px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 15px;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 30px;
+            font-size: 1em;
+            outline: none;
+        }
+        .chat-input:focus {
+            border-color: #1e3c72;
+        }
+        .send-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5em;
+            transition: 0.3s;
+        }
+        .send-btn:hover {
+            transform: scale(1.1);
+        }
+        .typing-indicator {
+            padding: 15px 25px;
+            background: white;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #1e3c72;
+            margin: 0 3px;
+            animation: typing 1.4s infinite;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%,60%,100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        /* حالت پنل مدیریت - مخفی بصورت پیش‌فرض */
+        .admin-container {
+            display: none;
+            padding: 30px;
+        }
+        body.admin-mode .chat-container {
+            display: none;
+        }
+        body.admin-mode .admin-container {
+            display: block;
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        .section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            margin-bottom: 20px;
+            color: #1e3c72;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        .form-control:focus {
+            border-color: #1e3c72;
+            outline: none;
+        }
+        .btn {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        /* حالت ورود */
+        .login-container {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            height: 90vh;
+        }
+        body.login-mode .chat-container,
+        body.login-mode .admin-container {
+            display: none;
+        }
+        body.login-mode .login-container {
+            display: flex;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            width: 350px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .login-box h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #1e3c72;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .file-list {
+            margin-top: 15px;
+        }
+        .file-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        .progress {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            transition: width 0.3s;
+        }
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="{% if page == 'admin' %}admin-mode{% elif page == 'login' %}login-mode{% else %}chat-mode{% endif %}">
+    <div class="container">
+        <!-- حالت چت -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="font-size: 2em;">🤖</span>
+                    <h1>تاریخ‌دان هوشمند</h1>
+                    <span class="gemini-badge">⚡ Gemini AI</span>
+                </div>
+                <a href="/admin-login" class="admin-link">⚙️ پنل مدیریت</a>
+            </div>
+            
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot">
+                    <div class="message-content">
+                        سلام! من تاریخ‌دان هوشمند با پشتیبانی از Google Gemini هستم.
+                        هر سوال تاریخی بپرسید.
+                        <div class="message-time">{{ now.strftime('%H:%M') if now else '12:00' }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="message-input" 
+                       placeholder="سوال خود را بپرسید..." 
+                       onkeypress="if(event.key==='Enter') sendMessage()">
+                <button class="send-btn" onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+        
+        <!-- حالت پنل مدیریت -->
+        <div class="admin-container">
+            <div class="admin-header">
+                <h1>⚙️ پنل مدیریت</h1>
+                <div>
+                    {% if user %}
+                    <span style="margin-left: 15px;">{{ user.username }}</span>
+                    {% endif %}
+                    <a href="/logout" class="btn btn-danger">🚪 خروج</a>
+                </div>
+            </div>
+            
+            {% if stats %}
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">{{ stats.total }}</div>
+                    <div>کل دانش</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ stats.unanswered }}</div>
+                    <div>سوالات بی‌پاسخ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ stats.gemini_stats.total_requests if stats.gemini_stats else 0 }}</div>
+                    <div>درخواست‌های Gemini</div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="grid-2">
+                <div class="section">
+                    <h2>➕ افزودن دانش تکی</h2>
+                    <form id="addForm">
+                        <div class="form-group">
+                            <input type="text" name="question" class="form-control" placeholder="سوال" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="answer" class="form-control" placeholder="پاسخ" rows="4" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <select name="category" class="form-control">
+                                <option value="ایران باستان">ایران باستان</option>
+                                <option value="اسلامی">اسلامی</option>
+                                <option value="معاصر">معاصر</option>
+                                <option value="جهان">جهان</option>
+                                <option value="عمومی">عمومی</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">➕ افزودن</button>
+                    </form>
+                </div>
+                
+                <div class="section">
+                    <h2>📁 آپلود فایل</h2>
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <input type="file" name="file" class="form-control" multiple accept=".txt,.csv,.json">
+                        </div>
+                        <button type="submit" class="btn">📤 آپلود</button>
+                    </form>
+                    <div id="fileList" class="file-list"></div>
+                    <div id="progress" style="display: none;">
+                        <div class="progress">
+                            <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- حالت ورود -->
+        <div class="login-container">
+            <div class="login-box">
+                <h2>🔐 ورود به پنل مدیریت</h2>
+                
+                {% if error %}
+                <div class="error">{{ error }}</div>
+                {% endif %}
+                
+                <form method="POST" action="/admin-login">
+                    <div class="form-group">
+                        <input type="text" name="username" class="form-control" placeholder="نام کاربری" value="admin" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" name="password" class="form-control" placeholder="رمز عبور" value="admin123" required>
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%;">ورود</button>
+                </form>
+                
+                <p style="text-align: center; margin-top: 20px; color: #666; font-size: 0.9em;">
+                    کاربر: admin / رمز: admin123
+                </p>
+                <p style="text-align: center; margin-top: 10px;">
+                    <a href="/" style="color: #1e3c72;">🏠 بازگشت به صفحه اصلی</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ================ متغیرها ================
+        const messagesContainer = document.getElementById('chat-messages');
+        const messageInput = document.getElementById('message-input');
+        
+        // ================ توابع چت ================
+        function addMessage(text, isUser = false, source = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            const time = new Date().toLocaleTimeString('fa-IR');
+            
+            let sourceHtml = '';
+            if (source && !isUser) {
+                if (source === 'gemini') {
+                    sourceHtml = '<span class="source-badge" style="background:#4285f4;">⚡ Gemini</span>';
+                } else if (source === 'local') {
+                    sourceHtml = '<span class="source-badge" style="background:#28a745;">📚 دانش</span>';
+                }
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    ${sourceHtml} ${text}
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function showTyping() {
+            if (document.getElementById('typing-indicator')) return;
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="typing-indicator">
+                    <span></span><span></span><span></span>
+                </div>
+            `;
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function hideTyping() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+        
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            addMessage(message, true);
+            messageInput.value = '';
+            showTyping();
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: message})
+                });
+                
+                const data = await response.json();
+                hideTyping();
+                
+                if (data.answer) {
+                    addMessage(data.answer, false, data.source);
+                } else {
+                    addMessage('متأسفم! پاسخی پیدا نشد. سوال شما ثبت شد.', false);
+                }
+                
+            } catch (error) {
+                hideTyping();
+                addMessage('خطا در ارتباط با سرور', false);
+                console.error(error);
+            }
+        }
+        
+        // ================ مدیریت فرم‌ها (اگه تو صفحه مدیریت هستیم) ================
+        const addForm = document.getElementById('addForm');
+        if (addForm) {
+            addForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                
+                try {
+                    const response = await fetch('/admin/add', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    alert(result.message);
+                    if (result.success) {
+                        this.reset();
+                        location.reload();
+                    }
+                } catch (error) {
+                    alert('خطا در ارسال فرم');
+                }
+            });
+        }
+        
+        const uploadForm = document.getElementById('uploadForm');
+        if (uploadForm) {
+            const fileInput = uploadForm.querySelector('input[type="file"]');
+            const fileList = document.getElementById('fileList');
+            const progress = document.getElementById('progress');
+            const progressBar = document.getElementById('progressBar');
+            
+            fileInput.addEventListener('change', function() {
+                fileList.innerHTML = '';
+                for (let file of this.files) {
+                    const div = document.createElement('div');
+                    div.className = 'file-item';
+                    div.innerHTML = `📄 ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+                    fileList.appendChild(div);
+                }
+            });
+            
+            uploadForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                
+                progress.style.display = 'block';
+                progressBar.style.width = '0%';
+                
+                try {
+                    const response = await fetch('/admin/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    progressBar.style.width = '100%';
+                    
+                    setTimeout(() => {
+                        alert('فایل با موفقیت آپلود شد');
+                        location.reload();
+                    }, 500);
+                    
+                } catch (error) {
+                    alert('خطا در آپلود فایل');
+                    progress.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+  </html>
