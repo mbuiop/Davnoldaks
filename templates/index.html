@@ -249,14 +249,20 @@
         </div>
         
         <!-- حالت پنل مدیریت -->
-        <div class="admin-container">
-            <div class="admin-header">
-                <h1>⚙️ پنل مدیریت</h1>
-                <div>
-                    <span style="margin-left: 15px;">{{ user.username }}</span>
-                    <a href="/logout" class="btn" style="background: #dc3545;">🚪 خروج</a>
-                </div>
-            </div>
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>⚙️ پنل مدیریت</h1>
+        <div>
+            {% if user %}
+            <span style="margin-left: 15px;">{{ user.username }}</span>
+            {% endif %}
+            <a href="/logout" class="btn" style="background: #dc3545;">🚪 خروج</a>
+        </div>
+    </div>
+    
+    <!-- بقیه کد پنل مدیریت -->
+    ...
+</div>
             
             <div class="stats-grid">
                 <div class="stat-card">
