@@ -145,10 +145,18 @@ def background_index_updater():
 threading.Thread(target=background_index_updater, daemon=True).start()
 
 # ================ اجرا ================
+# در m11.py، بخش آخر رو اینطوری اصلاح کن:
+
 if __name__ == '__main__':
-    # تست Gemini
-    test_result = gemini.ask("سلام")
-    gemini_status = "✅ فعال" if test_result and test_result.get('success') else "❌ غیرفعال"
+    # تست Gemini با مدل‌های مختلف
+    print("🔄 تست اتصال به Gemini API...")
+    test_result = gemini.ask("سلام، چطوری؟")
+    
+    if test_result and test_result.get('success'):
+        gemini_status = f"✅ فعال (مدل: {test_result.get('model', 'unknown')})"
+        print(f"✅ پاسخ تست: {test_result['answer'][:50]}...")
+    else:
+        gemini_status = "❌ غیرفعال - خطا در اتصال"
     
     cache_stats = cache.get_stats()
     
