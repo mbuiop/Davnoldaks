@@ -61,13 +61,13 @@ nav.menu .btn{width:100%}
 
 /* ---------- Main ---------- */
 main{max-width:1180px;margin:0 auto;padding:0 12px calc(84px + var(--safe-b))}
-.tv-wrap{perspective:1100px;width:100%;max-width:min(640px,calc(80vh*var(--r) + 24px));margin:4px auto 16px}
+.tv-wrap{perspective:1100px;width:100%;max-width:min(640px,calc(48vh*var(--r) + 24px));margin:4px auto 16px}
 .tv{position:relative;transform-style:preserve-3d;transition:transform .15s ease-out;border-radius:34px;padding:9px 9px 20px;
   background:linear-gradient(160deg,var(--bez1),var(--bez2) 55%,var(--bez3));
   box-shadow:0 30px 50px rgba(0,0,0,.55),0 8px 0 var(--bezsh),inset 0 3px 2px rgba(255,255,255,.35),inset 0 -8px 14px rgba(0,0,0,.5)}
 .screen{position:relative;aspect-ratio:16/9;border-radius:22px;overflow:hidden;background:#000;
   box-shadow:inset 0 0 0 4px #0a0818,inset 0 0 40px rgba(0,0,0,.9),0 0 30px rgba(59,130,246,.25)}
-.screen video{width:100%;height:100%;object-fit:cover;background:#000;display:block;pointer-events:none}
+.screen video{width:100%;height:100%;object-fit:cover;object-position:50% 30%;background:#000;display:block;pointer-events:none}
 .screen::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:22px;
   background:linear-gradient(120deg,rgba(255,255,255,.22),transparent 35%),radial-gradient(120% 100% at 50% 50%,transparent 60%,rgba(0,0,0,.2))}
 .noV{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:var(--mute);font-size:14px;text-align:center;padding:10px}
@@ -161,15 +161,22 @@ main{max-width:1180px;margin:0 auto;padding:0 12px calc(84px + var(--safe-b))}
 .arena{position:relative;height:200px;border-radius:20px;background:var(--field);box-shadow:inset 0 3px 8px rgba(0,0,0,.4);overflow:hidden}
 .arena .btn{position:absolute;width:64px;height:64px;padding:0;border-radius:50%}
 .screen .snd{position:absolute;bottom:8px;left:8px;z-index:3;width:38px;height:38px;padding:0;border-radius:50%;font-size:17px}
+.screen{cursor:pointer}
+.fsi{position:absolute;top:8px;right:8px;z-index:3;width:28px;height:28px;border-radius:9px;background:rgba(10,20,45,.5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;backdrop-filter:blur(6px);pointer-events:none}
+.screen .vback{display:none;position:absolute;top:calc(14px + var(--safe-t));right:14px;z-index:4}
+.screen.full{position:fixed;inset:0;z-index:75;width:100%;height:100%;aspect-ratio:auto!important;border-radius:0;box-shadow:none;background:#000;cursor:default}
+.screen.full video{object-fit:contain}
+.screen.full::after,.screen.full .fsi{display:none}
+.screen.full .vback{display:inline-flex}
 .fact{font-size:17px;line-height:2;min-height:96px;color:var(--ink)}
 @media (min-width:700px) and (max-width:979px){
   main{max-width:880px}
-  .tv-wrap{max-width:min(540px,calc(78vh*var(--r) + 24px))}
+  .tv-wrap{max-width:min(540px,calc(52vh*var(--r) + 24px))}
   .grid{max-width:none;gap:6px}
   .btn{padding:11px 22px;font-size:14px}
 }
 @media (min-width:980px){
-  main{max-width:1600px;padding:24px 32px calc(100px + var(--safe-b));display:grid;grid-template-columns:min(56vw,calc(78vh*var(--r) + 24px)) minmax(0,1fr);gap:32px;align-items:start}
+  main{max-width:1600px;padding:24px 32px calc(100px + var(--safe-b));display:grid;grid-template-columns:min(56vw,calc(68vh*var(--r) + 24px)) minmax(0,1fr);gap:32px;align-items:start}
   .tv-wrap{position:sticky;top:90px;width:100%;max-width:none;margin:0}
   .grid{width:100%;max-width:none;gap:8px}
   .tile{border-radius:14px}
@@ -208,6 +215,8 @@ main{max-width:1180px;margin:0 auto;padding:0 12px calc(84px + var(--safe-b))}
     <div class="tv" id="tv">
       <div class="screen">
         <video src="m.mp4" autoplay muted loop playsinline preload="auto" disablepictureinpicture controlslist="nodownload nofullscreen noremoteplayback" tabindex="-1"></video>
+        <span class="fsi" aria-hidden="true">⤢</span>
+        <button class="btn vback" id="vback">برگشت</button>
         <button class="btn cyan snd" id="snd" aria-label="صدا">🔇</button>
         <div class="noV" id="noV">فایل m.mp4 را کنار index.html قرار بده</div>
       </div>
@@ -366,8 +375,23 @@ main{max-width:1180px;margin:0 auto;padding:0 12px calc(84px + var(--safe-b))}
   v.play&&v.play().catch(function(){});
   v.volume=1;
   v.addEventListener('loadedmetadata',function(){
-    if(v.videoWidth&&v.videoHeight){var r=Math.min(3,Math.max(.4,v.videoWidth/v.videoHeight));document.querySelector('.screen').style.aspectRatio=r;document.documentElement.style.setProperty('--r',r)}
+    if(v.videoWidth&&v.videoHeight){var r=Math.min(2.2,Math.max(1,v.videoWidth/v.videoHeight));document.querySelector('.screen').style.aspectRatio=r;document.documentElement.style.setProperty('--r',r)}
   });
+  /* Tap the video: full screen (the screen element is moved to <body> so 3D transforms don't trap it) */
+  var scr=document.querySelector('.screen'),anchor=document.createElement('span'),vfull=false;
+  scr.parentNode.insertBefore(anchor,scr);
+  function setFull(on){
+    if(on===vfull)return;vfull=on;
+    if(on){document.body.appendChild(scr);scr.classList.add('full');document.body.classList.add('lock')}
+    else{anchor.parentNode.insertBefore(scr,anchor);scr.classList.remove('full');document.body.classList.remove('lock')}
+    var pr=v.play();if(pr&&pr.catch)pr.catch(function(){});
+  }
+  function openVid(){setFull(true);try{history.pushState({v:1},'')}catch(e){}}
+  function closeVid(){if(!vfull)return;setFull(false);try{if(history.state&&history.state.v)history.back()}catch(e){}}
+  scr.addEventListener('click',function(e){if(vfull||e.target.closest('#snd')||e.target.closest('#vback'))return;openVid()});
+  $('#vback').addEventListener('click',function(e){e.stopPropagation();closeVid()});
+  addEventListener('popstate',function(){if(vfull)setFull(false)});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeVid()});
   /* Sound: browsers only allow it after a tap, so start muted and unmute on the first tap */
   var snd=$('#snd');
   function paint(){snd.textContent=v.muted?'🔇':'🔊'}
